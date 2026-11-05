@@ -1,6 +1,11 @@
 const path = require('path');
 
-function pickBinaryAssetForPlatform({ platform, arch, zipNames }) {
+function pickBinaryAssetForPlatform({
+    platform,
+    arch,
+    zipNames,
+    preferredBackend = 'vulkan',
+}) {
     const isSdCliZip = (name) => name.startsWith('sd-master-') || name.includes('-bin-');
     const candidates = zipNames.filter(isSdCliZip);
 
@@ -10,11 +15,37 @@ function pickBinaryAssetForPlatform({ platform, arch, zipNames }) {
     }
 
     if (platform === 'win32') {
-        const winCandidates = candidates.filter((name) => /win-(avx2?|avx512|noavx|cuda12|cu12)-x64/.test(name));
-        const order = ['win-avx2-x64', 'win-avx-x64', 'win-avx512-x64', 'win-noavx-x64', 'win-cuda12-x64', 'win-cu12-x64'];
-        for (const tag of order) {
-            const hit = winCandidates.find((name) => name.includes(tag));
-            if (hit) return hit;
+        if (arch !== 'x64') return null;
+
+        const winCandidates = candidates.filter((name) =>
+            /win-(cpu|vulkan|rocm(?:-[\d.]+)?|cuda12|cu12|avx2?|avx512|noavx)-x64/i.test(name)
+        );
+
+        const backendMatchers = {
+            vulkan: [/win-vulkan-x64/i],
+            rocm: [/win-rocm-.*-x64/i],
+            cuda: [/win-(?:cuda12|cu12)-x64/i],
+            cpu: [
+                /win-cpu-x64/i,
+                /win-avx2-x64/i,
+                /win-avx-x64/i,
+                /win-avx512-x64/i,
+                /win-noavx-x64/i,
+            ],
+        };
+
+        const fallbackOrder = ['vulkan', 'rocm', 'cpu', 'cuda'];
+        const order = [
+            preferredBackend,
+            ...fallbackOrder.filter((backend) => backend !== preferredBackend),
+        ];
+
+        for (const backend of order) {
+            const matchers = backendMatchers[backend] || [];
+            for (const matcher of matchers) {
+                const hit = winCandidates.find((name) => matcher.test(name));
+                if (hit) return hit;
+            }
         }
         return null;
     }

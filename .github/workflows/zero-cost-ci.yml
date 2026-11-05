@@ -2,7 +2,7 @@ name: Zero-cost build verification
 
 on:
   push:
-    branches: [main, nafri-studio]
+    branches: [main, nafri-studio, amd-vulkan-local-ai]
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run Node tests
+        run: node --test tests/*.test.js
 
       - name: Build workspace packages
         run: npm run build:packages
