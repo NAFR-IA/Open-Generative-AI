@@ -83,6 +83,36 @@ function createWindow() {
 app.whenReady().then(() => {
     createWindow();
 
+    // Headless-friendly packaged-app UI verification, only when CI opts in.
+    if (process.argv.includes('--nafri-smoke-test')) {
+        mainWindow.webContents.once('did-finish-load', async () => {
+            try {
+                const ok = await mainWindow.webContents.executeJavaScript(`
+                    new Promise(resolve => {
+                        let remaining = 80;
+                        const check = () => {
+                            const text = document.querySelector('#content-area')?.textContent || '';
+                            if (text.includes('NAFRI OGA Studio') && typeof window.localAI?.nafri?.providers === 'function') {
+                                resolve(true);
+                            } else if (--remaining <= 0) {
+                                resolve(false);
+                            } else {
+                                setTimeout(check, 250);
+                            }
+                        };
+                        check();
+                    })
+                `);
+                if (!ok) console.error('[NAFRI smoke] Studio UI or preload bridge did not load');
+                else console.log('[NAFRI smoke] Studio navigation and preload loaded');
+                app.exit(ok ? 0 : 1);
+            } catch (error) {
+                console.error('[NAFRI smoke] Failed:', error);
+                app.exit(1);
+            }
+        });
+    }
+
     try {
         registerLocalInference();
         registerWan2gp();
