@@ -1,4 +1,5 @@
 import { SettingsModal } from './SettingsModal.js';
+import { FreeCloudModal } from './FreeCloudModal.js';
 import { t, getLang, setLang } from '../lib/i18n.js';
 
 export function Header(navigate) {
@@ -86,6 +87,13 @@ export function Header(navigate) {
     langBtn.textContent = currentLang === 'zh-CN' ? 'EN' : '中文';
     langBtn.onclick = () => setLang(currentLang === 'zh-CN' ? 'en' : 'zh-CN');
 
+    const zeroCostBtn = document.createElement('button');
+    zeroCostBtn.className = 'px-3 py-1.5 rounded-md border border-teal-600/50 bg-teal-900/30 text-[13px] font-bold text-teal-200 hover:bg-teal-800/40';
+    zeroCostBtn.textContent = '☁ Gratis 0 €';
+    zeroCostBtn.title = 'Catálogo de proveedores de GPU gratuita';
+    zeroCostBtn.onclick = () => document.body.appendChild(FreeCloudModal());
+
+    rightPart.appendChild(zeroCostBtn);
     rightPart.appendChild(langBtn);
     rightPart.appendChild(settingsBtn);
 
