@@ -25,6 +25,7 @@ export function NafriStudio() {
         </label>
         <div class="flex gap-3 flex-wrap">
           <button id="nafri-run" class="px-4 py-2 bg-blue-600 rounded font-semibold disabled:opacity-40">Generar gratis</button>
+          <button id="nafri-cancel" disabled class="px-4 py-2 bg-red-700 rounded disabled:opacity-40">Cancelar</button>
           <button id="nafri-refresh" class="px-4 py-2 bg-gray-700 rounded">Comprobar motores</button>
           <button id="nafri-settings" class="px-4 py-2 bg-gray-700 rounded">Instalar modelos / Ajustes</button>
         </div>
@@ -33,15 +34,24 @@ export function NafriStudio() {
       <div id="nafri-result" class="rounded-lg bg-white/5 border border-white/10 p-4" aria-live="polite"></div>
     </div>`;
   const $ = id => root.querySelector('#'+id);
-  const kind=$('nafri-kind'), model=$('nafri-model'), run=$('nafri-run');
-  let providers=[];
+  const kind=$('nafri-kind'), model=$('nafri-model'), run=$('nafri-run'), cancel=$('nafri-cancel');
+  let providers=[], generating=false;
+  const progressCleanup=window.localAI?.onProgress?.(data => {
+    if (!generating || !data) return;
+    if (data.status === 'generating' || data.status === 'starting') {
+      const percentage=Number.isFinite(data.progress) ? ' · '+Math.round(data.progress*100)+'%' : '';
+      $('nafri-message').textContent='Generando'+percentage+(data.message?' · '+data.message:'');
+    }
+  });
+  // Retained pages keep listeners alive while navigation switches; release on unload.
+  window.addEventListener('beforeunload', () => progressCleanup?.(), {once:true});
   function updateModels() {
     model.replaceChildren();
     const chosen=providers.find(p => p.kind===kind.value);
     for(const m of chosen?.models || []) {
       const opt=document.createElement('option'); opt.value=m.id; opt.textContent=m.name; model.appendChild(opt);
     }
-    run.disabled = !chosen?.available || !model.value;
+    run.disabled = generating || !chosen?.available || !model.value;
     if (!chosen?.available) $('nafri-message').textContent = chosen?.message || 'Este motor no está listo. Instala sus modelos desde Ajustes.';
   }
   async function refresh() {
@@ -69,7 +79,11 @@ export function NafriStudio() {
     const prompt=$('nafri-prompt').value.trim();
     if(!prompt){$('nafri-message').textContent='Escribe una descripción.';return;}
     if(!model.value)return;
+    generating=true;
     run.disabled=true;
+    cancel.disabled=false;
+    kind.disabled=true;
+    model.disabled=true;
     $('nafri-message').textContent='Generando con motor local…';
     $('nafri-result').replaceChildren();
     try{
@@ -85,7 +99,22 @@ export function NafriStudio() {
       $('nafri-result').appendChild(media);
       $('nafri-message').textContent='Generación completada con '+output.providerId;
     }catch(err){$('nafri-message').textContent='No se pudo generar: '+err.message;}
-    finally{run.disabled=false;}
+    finally{
+      generating=false;
+      cancel.disabled=true;
+      kind.disabled=false;
+      model.disabled=false;
+      updateModels();
+    }
+  });
+  cancel.addEventListener('click', async () => {
+    if (!generating || !window.localAI) return;
+    cancel.disabled=true;
+    $('nafri-message').textContent='Cancelando generación…';
+    try {
+      if (kind.value === 'video') await window.localAI.wan2gp.cancelGeneration();
+      else await window.localAI.cancelGeneration();
+    } catch (err) { $('nafri-message').textContent='Error al cancelar: '+err.message; }
   });
   refresh();
   return root;
