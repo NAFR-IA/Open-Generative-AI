@@ -2,6 +2,7 @@ const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const { register: registerLocalInference } = require('./lib/localInference');
 const { register: registerWan2gp } = require('./lib/wan2gpProvider');
+const { register: registerNafriProviders } = require('./lib/nafriProviderBridge');
 
 process.on('uncaughtException', (err) => {
     console.error('Uncaught exception:', err);
@@ -54,7 +55,19 @@ function createWindow() {
     });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
+        // Never pass untrusted custom protocols (file:, javascript:, etc.) to the OS.
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                shell.openExternal(parsed.href).catch((err) => {
+                    console.error('Failed to open external URL:', err);
+                });
+            } else {
+                console.warn('Blocked external URL protocol:', parsed.protocol);
+            }
+        } catch (err) {
+            console.warn('Blocked invalid external URL:', err.message);
+        }
         return { action: 'deny' };
     });
 
@@ -73,6 +86,7 @@ app.whenReady().then(() => {
     try {
         registerLocalInference();
         registerWan2gp();
+        registerNafriProviders();
     } catch (err) {
         console.error('Failed to register local-ai/wan2gp handlers:', err);
         dialog.showErrorBox(

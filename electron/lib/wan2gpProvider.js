@@ -261,4 +261,4 @@ function register() {
     app.on('before-quit', () => cancelGeneration());
 }
 
-module.exports = { register, WAN2GP_CATALOG };
+module.exports = { register, WAN2GP_CATALOG, readConfig, check, listModels, generate };
