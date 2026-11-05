@@ -1,4 +1,4 @@
-name: Build and test Windows installer
+name: Build and test Windows packages
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  windows-installer:
+  windows-packages:
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -32,41 +32,42 @@ jobs:
       - name: Build workspace packages
         run: npm run build:packages
 
-      - name: Build Windows installer
+      - name: Build Windows installer and portable package
         run: npm run electron:build:win -- --publish never
 
-      - name: Install and launch smoke test
+      - name: Verify installer archive
         shell: pwsh
         run: |
           $installer = Get-ChildItem -Path release -Filter "*Setup*.exe" | Select-Object -First 1
           if (-not $installer) { throw "Windows installer was not generated" }
-          $installDir = Join-Path $env:RUNNER_TEMP "oga-smoke-install"
-          $install = Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$installDir" -Wait -PassThru
-          if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)" }
-          Start-Sleep -Seconds 5
-          $roots = @($installDir, (Join-Path $env:LOCALAPPDATA "Programs"))
-          $app = $null
-          foreach ($root in $roots) {
-            if (Test-Path -LiteralPath $root) {
-              $app = Get-ChildItem -LiteralPath $root -Filter "Open Generative AI.exe" -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-              if ($app) { break }
-            }
-          }
-          if (-not $app) { throw "Installer returned success but installed executable was not found" }
-          "Installed executable: $($app.FullName)"
-          $launched = Start-Process -FilePath $app.FullName -ArgumentList "--disable-gpu", "--no-sandbox" -PassThru
+          & 7z t $installer.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Installer archive integrity test failed" }
+
+      - name: Launch packaged application smoke test
+        shell: pwsh
+        run: |
+          $app = Resolve-Path "release/win-unpacked/Open Generative AI.exe"
+          $launched = Start-Process -FilePath $app -ArgumentList "--disable-gpu", "--no-sandbox" -PassThru
           Start-Sleep -Seconds 12
           if ($launched.HasExited) {
             if ($launched.ExitCode -ne 0) { throw "Application exited with code $($launched.ExitCode)" }
             throw "Application closed before the smoke-test window elapsed"
           }
           Stop-Process -Id $launched.Id -Force
-          "Installer and 12-second application launch smoke test passed."
+          "Packaged application remained running for the 12-second smoke test."
 
-      - name: Upload tested Windows installer
+      - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: NAFRI-Open-Generative-AI-Windows-Tested
-          path: release/*.exe
+          name: NAFRI-Open-Generative-AI-Windows-Installer
+          path: release/*Setup*.exe
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload tested portable application
+        uses: actions/upload-artifact@v4
+        with:
+          name: NAFRI-Open-Generative-AI-Windows-Portable-Tested
+          path: release/win-unpacked/**
           if-no-files-found: error
           retention-days: 3
