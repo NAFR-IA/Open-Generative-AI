@@ -66,18 +66,18 @@ jobs:
           & 7z t $installer.FullName
           if ($LASTEXITCODE -ne 0) { throw "Installer archive integrity test failed" }
 
-      - name: Launch packaged application smoke test
+      - name: Verify packaged NAFRI Studio UI and preload bridge
         shell: pwsh
         run: |
           $app = Resolve-Path "release/win-unpacked/Open Generative AI.exe"
-          $launched = Start-Process -FilePath $app -ArgumentList "--disable-gpu", "--no-sandbox" -PassThru
-          Start-Sleep -Seconds 12
-          if ($launched.HasExited) {
-            if ($launched.ExitCode -ne 0) { throw "Application exited with code $($launched.ExitCode)" }
-            throw "Application closed before the smoke-test window elapsed"
+          $launched = Start-Process -FilePath $app -ArgumentList "--disable-gpu", "--no-sandbox", "--nafri-smoke-test" -PassThru
+          try {
+            if (-not $launched.WaitForExit(60000)) { throw "Studio UI smoke test timed out" }
+            if ($launched.ExitCode -ne 0) { throw "Studio UI failed to load (exit code $($launched.ExitCode))" }
+            "Packaged NAFRI Studio UI and secure preload passed smoke test."
+          } finally {
+            if (-not $launched.HasExited) { Stop-Process -Id $launched.Id -Force -ErrorAction SilentlyContinue }
           }
-          Stop-Process -Id $launched.Id -Force
-          "Packaged application remained running for the 12-second smoke test."
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
