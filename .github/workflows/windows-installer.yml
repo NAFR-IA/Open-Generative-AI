@@ -38,7 +38,7 @@ jobs:
         run: npm ci
 
       - name: Run Node tests
-        run: node --test tests/*.test.js
+        run: node --test tests
 
       - name: Build workspace packages
         run: npm run build:packages
