@@ -180,7 +180,8 @@ function Wan2gpConfigBar(onChange) {
         </div>
         <div class="flex flex-col gap-1.5">
             <span class="text-[10px] font-bold text-secondary uppercase tracking-wider">${t('localModels.wan2gpRemote')}</span>
-            <input id="wan2gp-url" type="text" placeholder="http://192.168.1.42:7866/mcp" class="${inputClass}"/>
+            <input id="wan2gp-url" type="text" placeholder="https://example.trycloudflare.com/mcp" class="${inputClass}"/>
+            <input id="wan2gp-token" type="password" placeholder="Session token (cloud worker)" class="${inputClass}"/>
             <span class="text-[10px] text-muted leading-relaxed">${t('localModels.wan2gpRemoteHelp')}</span>
         </div>
         <div class="flex items-center gap-2 justify-end">
@@ -193,6 +194,7 @@ function Wan2gpConfigBar(onChange) {
     const dirInput = wrap.querySelector('#wan2gp-dir');
     const pythonInput = wrap.querySelector('#wan2gp-python');
     const urlInput = wrap.querySelector('#wan2gp-url');
+    const tokenInput = wrap.querySelector('#wan2gp-token');
     const checkBtn = wrap.querySelector('#wan2gp-check');
     const saveBtn = wrap.querySelector('#wan2gp-save');
     const statusEl = wrap.querySelector('#wan2gp-status');
@@ -207,7 +209,7 @@ function Wan2gpConfigBar(onChange) {
             ? tf('localModels.pythonDefault', `${dir}/venv/bin/python`)
             : t('localModels.pythonPath');
     };
-    const formValues = () => ({ dir: dirInput.value.trim(), python: pythonInput.value.trim(), url: urlInput.value.trim() });
+    const formValues = () => ({ dir: dirInput.value.trim(), python: pythonInput.value.trim(), url: urlInput.value.trim(), token: tokenInput.value.trim() });
     const runCheck = async (cfg) => {
         setStatus(t('localModels.probing'), 'muted');
         const r = await localAI.checkWan2gp(cfg);
@@ -222,6 +224,7 @@ function Wan2gpConfigBar(onChange) {
         dirInput.value = cfg.dir || '';
         pythonInput.value = cfg.python || '';
         urlInput.value = cfg.url || '';
+        tokenInput.value = cfg.token || '';
         updatePythonPlaceholder();
         if (cfg.dir || cfg.url) await runCheck({ quick: true });
         else setStatus(t('localModels.notConfiguredNote'), 'muted');
