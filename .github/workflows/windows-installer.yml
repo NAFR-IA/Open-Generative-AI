@@ -43,9 +43,18 @@ jobs:
           $installDir = Join-Path $env:RUNNER_TEMP "oga-smoke-install"
           $install = Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$installDir" -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)" }
-          $app = Join-Path $installDir "Open Generative AI.exe"
-          if (-not (Test-Path -LiteralPath $app)) { throw "Installed application executable not found" }
-          $launched = Start-Process -FilePath $app -ArgumentList "--disable-gpu", "--no-sandbox" -PassThru
+          Start-Sleep -Seconds 5
+          $roots = @($installDir, (Join-Path $env:LOCALAPPDATA "Programs"))
+          $app = $null
+          foreach ($root in $roots) {
+            if (Test-Path -LiteralPath $root) {
+              $app = Get-ChildItem -LiteralPath $root -Filter "Open Generative AI.exe" -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($app) { break }
+            }
+          }
+          if (-not $app) { throw "Installer returned success but installed executable was not found" }
+          "Installed executable: $($app.FullName)"
+          $launched = Start-Process -FilePath $app.FullName -ArgumentList "--disable-gpu", "--no-sandbox" -PassThru
           Start-Sleep -Seconds 12
           if ($launched.HasExited) {
             if ($launched.ExitCode -ne 0) { throw "Application exited with code $($launched.ExitCode)" }
