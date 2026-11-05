@@ -2,6 +2,10 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('localAI', {
     isElectron: true,
+    nafri: {
+        providers: () => ipcRenderer.invoke('nafri:providers'),
+        generate: (kind, params) => ipcRenderer.invoke('nafri:generate', kind, params),
+    },
 
     // ── sd.cpp engine ──────────────────────────────────────────────────────
     getBinaryStatus: () => ipcRenderer.invoke('local-ai:binary-status'),
