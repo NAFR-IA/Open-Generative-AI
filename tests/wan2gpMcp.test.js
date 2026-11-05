@@ -67,6 +67,29 @@ test('probe initializes a session and requires WanGP generation tools', async ()
     await assert.rejects(createMcpClient('http://x', { fetchImpl: other.fetchImpl }).probe(), /does not expose WanGP generation tools/);
 });
 
+test('session token is sent as a Bearer token on MCP requests', async () => {
+    const auth = [];
+    const fetchImpl = async (_url, init = {}) => {
+        auth.push(init.headers?.Authorization);
+        const msg = JSON.parse(init.body);
+        if (msg.method === 'notifications/initialized') {
+            return { ok: true, status: 202, headers: new Map(), text: async () => '' };
+        }
+        const result = msg.method === 'initialize'
+            ? { serverInfo: { name: 'Cloud worker', version: '1' } }
+            : { tools: [{ name: 'wangp_generate' }, { name: 'wangp_get_job' }] };
+        return {
+            ok: true,
+            status: 200,
+            headers: new Map([['content-type', 'application/json']]),
+            text: async () => JSON.stringify({ jsonrpc: '2.0', id: msg.id, result }),
+        };
+    };
+    await createMcpClient('https://worker.example/mcp', { fetchImpl, token: 'secret-session' }).probe();
+    assert.ok(auth.length >= 3);
+    assert.ok(auth.every(value => value === 'Bearer secret-session'));
+});
+
 test('modelAvailability distinguishes downloaded, missing and unknown models', async () => {
     const { fetchImpl } = fakeServer({
         wangp_get_model_availability: ({ model_type }) => model_type === 'nope'
