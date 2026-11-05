@@ -54,7 +54,19 @@ function createWindow() {
     });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
+        // Never pass untrusted custom protocols (file:, javascript:, etc.) to the OS.
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                shell.openExternal(parsed.href).catch((err) => {
+                    console.error('Failed to open external URL:', err);
+                });
+            } else {
+                console.warn('Blocked external URL protocol:', parsed.protocol);
+            }
+        } catch (err) {
+            console.warn('Blocked invalid external URL:', err.message);
+        }
         return { action: 'deny' };
     });
 
