@@ -25,7 +25,11 @@ function navigate(page) {
     contentArea.appendChild(wrapper);
     mountedPages[page] = wrapper;
 
-    if (page === 'image') {
+    if (page === 'nafri') {
+      import('./components/NafriStudio.js').then(({ NafriStudio }) => {
+        wrapper.appendChild(NafriStudio());
+      });
+    } else if (page === 'image') {
       wrapper.appendChild(ImageStudio());
     } else if (page === 'video') {
       import('./components/VideoStudio.js').then(({ VideoStudio }) => {
