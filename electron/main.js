@@ -86,6 +86,7 @@ app.whenReady().then(() => {
     try {
         registerLocalInference();
         registerWan2gp();
+        registerNafriProviders();
     } catch (err) {
         console.error('Failed to register local-ai/wan2gp handlers:', err);
         dialog.showErrorBox(
