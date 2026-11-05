@@ -599,4 +599,7 @@ function register() {
 
 module.exports = {
     register,
+    getBinaryStatus: async () => { ensureLocalAiPaths(); return getBinaryStatus(); },
+    listModels: () => { ensureLocalAiPaths(); return listModels(); },
+    generate: (params, win) => { ensureLocalAiPaths(); return generate(params, win); },
 };
