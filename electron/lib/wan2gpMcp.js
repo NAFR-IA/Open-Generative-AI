@@ -51,7 +51,7 @@ function toProgressEvent(event) {
     };
 }
 
-function createMcpClient(url, { fetchImpl = fetch } = {}) {
+function createMcpClient(url, { fetchImpl = fetch, token = '' } = {}) {
     const endpoint = normalizeMcpUrl(url);
     let sessionId = null;
     let nextId = 1;
@@ -66,6 +66,7 @@ function createMcpClient(url, { fetchImpl = fetch } = {}) {
                 Accept: 'application/json, text/event-stream',
                 'MCP-Protocol-Version': PROTOCOL_VERSION,
                 ...(sessionId ? { 'Mcp-Session-Id': sessionId } : {}),
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: JSON.stringify(body),
             signal,
@@ -133,7 +134,10 @@ function createMcpClient(url, { fetchImpl = fetch } = {}) {
         const slot = await callTool('wangp_create_gallery_upload', { filename: name || 'start.png' });
         const res = await fetchImpl(transferUrl(slot.upload_url), {
             method: 'PUT',
-            headers: { 'Content-Type': mime || 'application/octet-stream' },
+            headers: {
+                'Content-Type': mime || 'application/octet-stream',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             body: bytes,
         });
         const body = await res.json().catch(() => ({}));
@@ -143,7 +147,9 @@ function createMcpClient(url, { fetchImpl = fetch } = {}) {
 
     async function download(mediaId) {
         const slot = await callTool('wangp_create_gallery_download', { media_id: mediaId });
-        const res = await fetchImpl(transferUrl(slot.download_url));
+        const res = await fetchImpl(transferUrl(slot.download_url), {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) throw new Error(`Wan2GP download failed: HTTP ${res.status}`);
         return { filename: slot.filename, bytes: Buffer.from(await res.arrayBuffer()) };
     }
