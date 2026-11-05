@@ -1,4 +1,4 @@
-name: Build Windows installer
+name: Build and test Windows installer
 
 on:
   push:
@@ -35,10 +35,29 @@ jobs:
       - name: Build Windows installer
         run: npm run electron:build:win -- --publish never
 
-      - name: Upload Windows installer
+      - name: Install and launch smoke test
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path release -Filter "*Setup*.exe" | Select-Object -First 1
+          if (-not $installer) { throw "Windows installer was not generated" }
+          $installDir = Join-Path $env:RUNNER_TEMP "oga-smoke-install"
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList "/S", "/D=$installDir" -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)" }
+          $app = Join-Path $installDir "Open Generative AI.exe"
+          if (-not (Test-Path -LiteralPath $app)) { throw "Installed application executable not found" }
+          $launched = Start-Process -FilePath $app -ArgumentList "--disable-gpu", "--no-sandbox" -PassThru
+          Start-Sleep -Seconds 12
+          if ($launched.HasExited) {
+            if ($launched.ExitCode -ne 0) { throw "Application exited with code $($launched.ExitCode)" }
+            throw "Application closed before the smoke-test window elapsed"
+          }
+          Stop-Process -Id $launched.Id -Force
+          "Installer and 12-second application launch smoke test passed."
+
+      - name: Upload tested Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: NAFRI-Open-Generative-AI-Windows
+          name: NAFRI-Open-Generative-AI-Windows-Tested
           path: release/*.exe
           if-no-files-found: error
           retention-days: 3
