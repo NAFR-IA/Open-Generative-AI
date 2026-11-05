@@ -41,6 +41,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check modular code syntax
+        run: |
+          node --check electron/lib/nafriEngineRegistry.js
+          node --check electron/lib/nafriProviderBridge.js
+          node --check electron/main.js
+          node --check electron/preload.js
+          node --check src/components/NafriStudio.js
+
       - name: Verify modular engine fallback and no-paid-provider policy
         run: node --test tests/nafriEngineRegistry.test.js
 
