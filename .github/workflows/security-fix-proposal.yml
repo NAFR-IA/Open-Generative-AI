@@ -1,0 +1,81 @@
+name: Propose tested dependency security fixes
+
+on:
+  push:
+    branches: [security-dependency-fixes]
+    paths:
+      - ".github/workflows/security-fix-proposal.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout security branch with submodules
+        uses: actions/checkout@v4
+        with:
+          ref: security-dependency-fixes
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Apply non-breaking npm audit fixes to lockfile
+        shell: bash
+        run: npm audit fix --package-lock-only || true
+
+      - name: Reinstall corrected dependency tree
+        run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build:packages
+
+      - name: Build desktop renderer
+        run: npm run vite:build
+
+      - name: Record remaining runtime vulnerabilities
+        shell: bash
+        run: |
+          mkdir -p audit-after-fix
+          npm audit --omit=dev --json > audit-after-fix/npm-audit-runtime.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('audit-after-fix/npm-audit-runtime.json', 'utf8'));
+          const v = audit.metadata?.vulnerabilities || {};
+          fs.writeFileSync(
+            'audit-after-fix/README.md',
+            `# Runtime audit after non-breaking fixes\n\nTotal: ${v.total ?? 0}\n\nLow: ${v.low ?? 0}\nModerate: ${v.moderate ?? 0}\nHigh: ${v.high ?? 0}\nCritical: ${v.critical ?? 0}\n`
+          );
+          NODE
+
+      - name: Commit tested lockfile proposal
+        shell: bash
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "No lockfile changes were required."
+            exit 0
+          fi
+          git config user.name "NAFRI OGA CI"
+          git config user.email "vicnaf@gmail.com"
+          git add package-lock.json
+          git commit -m "fix: apply tested non-breaking dependency security updates"
+          git push origin security-dependency-fixes
+
+      - name: Upload post-fix audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: NAFRI-OGA-Audit-After-Safe-Fixes
+          path: audit-after-fix/
+          if-no-files-found: error
+          retention-days: 7
