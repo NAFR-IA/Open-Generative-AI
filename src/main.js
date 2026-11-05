@@ -69,7 +69,7 @@ contentArea.className = 'flex-1 relative w-full overflow-hidden flex flex-col bg
 app.appendChild(contentArea);
 
 // Initial Route
-navigate('image');
+navigate('nafri');
 
 // Event Listener for Navigation
 window.addEventListener('navigate', (e) => {
