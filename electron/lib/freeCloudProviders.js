@@ -33,6 +33,16 @@ const PROVIDERS = Object.freeze([
     requiresAccount: false,
     note: 'Demo oficial en ZeroGPU de edición dirigida por instrucciones. Para conservar mejor objetos, composición y detalles; la fidelidad debe evaluarse.',
   }),
+  Object.freeze({
+    id: 'wan22-video-fast',
+    label: 'Wan 2.2 14B Fast — imagen a vídeo',
+    url: 'https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster',
+    capabilities: Object.freeze(['video', 'image-to-video']),
+    mode: 'browser',
+    billing: 'free-quota',
+    requiresAccount: false,
+    note: 'Demo en ZeroGPU para animar una imagen con instrucciones. La generación puede agotar la cuota diaria y está sujeta a colas.',
+  }),
 ]);
 
 function listFreeCloudProviders() {
