@@ -36,3 +36,16 @@ test('registry copies are not mutable shared objects', () => {
   assert.notEqual(listFreeCloudProviders()[0].label, 'altered');
   assert.equal(listFreeCloudProviders()[0].capabilities.includes('paid-service'), false);
 });
+
+test('image and editing demos are allowlisted and open their exact official Spaces', async () => {
+  const providers = listFreeCloudProviders();
+  assert.ok(providers.some(p => p.id === 'qwen-image-21' && p.capabilities.includes('image')));
+  assert.ok(providers.some(p => p.id === 'qwen-image-edit-2511' && p.capabilities.includes('image-editing')));
+  const urls = [];
+  await openFreeCloudProvider('qwen-image-21', async url => urls.push(url));
+  await openFreeCloudProvider('qwen-image-edit-2511', async url => urls.push(url));
+  assert.deepEqual(urls, [
+    'https://huggingface.co/spaces/Qwen/Qwen-Image-2.1',
+    'https://huggingface.co/spaces/Qwen/Qwen-Image-Edit-2511'
+  ]);
+});
