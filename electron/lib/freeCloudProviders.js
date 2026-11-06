@@ -6,7 +6,7 @@ const PROVIDERS = Object.freeze([
   Object.freeze({
     id: 'huggingface-zerogpu',
     label: 'Hugging Face ZeroGPU',
-    url: 'https://huggingface.co/spaces/zero-gpu-explorers/README',
+    url: 'https://huggingface.co/spaces/enzostvs/zero-gpu-spaces',
     capabilities: Object.freeze(['image', 'image-editing', 'video']),
     mode: 'browser',
     billing: 'free-quota',
