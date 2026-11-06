@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('localAI', {
     freeCloud: {
         list: () => ipcRenderer.invoke('free-cloud:list'),
         open: (providerId) => ipcRenderer.invoke('free-cloud:open', providerId),
+        copyPrompt: (prompt) => ipcRenderer.invoke('free-cloud:copy-prompt', prompt),
     },
 
     // ── sd.cpp engine ──────────────────────────────────────────────────────
