@@ -26,7 +26,7 @@ test('opens only the approved URL and sends no user input', async () => {
   const opened = [];
   const result = await openFreeCloudProvider('huggingface-zerogpu', async url => opened.push(url));
   assert.equal(result.ok, true);
-  assert.deepEqual(opened, ['https://huggingface.co/spaces/zero-gpu-explorers/README']);
+  assert.deepEqual(opened, ['https://huggingface.co/spaces/enzostvs/zero-gpu-spaces']);
 });
 
 test('registry copies are not mutable shared objects', () => {
