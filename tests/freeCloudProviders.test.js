@@ -49,3 +49,14 @@ test('image and editing demos are allowlisted and open their exact official Spac
     'https://huggingface.co/spaces/Qwen/Qwen-Image-Edit-2511'
   ]);
 });
+
+test('video demo supports explicit image-to-video, and no provider is billable', async () => {
+  const entries = listFreeCloudProviders();
+  const video = entries.find(p => p.id === 'wan22-video-fast');
+  assert.ok(video);
+  assert.ok(video.capabilities.includes('image-to-video'));
+  assert.ok(entries.every(p => p.billing === 'free-quota'));
+  const opened = [];
+  await openFreeCloudProvider(video.id, async url => opened.push(url));
+  assert.deepEqual(opened, ['https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster']);
+});
