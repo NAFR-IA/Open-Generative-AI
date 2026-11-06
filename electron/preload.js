@@ -3,6 +3,13 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('localAI', {
     isElectron: true,
 
+    // Curated no-cost browser handoff. No prompts, files or API credentials sent.
+    freeCloud: {
+        list: () => ipcRenderer.invoke('free-cloud:list'),
+        open: (providerId) => ipcRenderer.invoke('free-cloud:open', providerId),
+        copyPrompt: (prompt) => ipcRenderer.invoke('free-cloud:copy-prompt', prompt),
+    },
+
     // ── sd.cpp engine ──────────────────────────────────────────────────────
     getBinaryStatus: () => ipcRenderer.invoke('local-ai:binary-status'),
     downloadBinary: () => ipcRenderer.invoke('local-ai:download-binary'),
