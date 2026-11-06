@@ -21,7 +21,7 @@ const PROVIDERS = Object.freeze([
     mode: 'browser',
     billing: 'free-quota',
     requiresAccount: false,
-    note: 'Demo oficial de Qwen en ZeroGPU. Generación y edición de imágenes con GPU gratuita compartida; disponibilidad y licencias sujetas al Space.',
+    note: 'Demo oficial en ZeroGPU para uso experimental. ATENCIÓN: el modelo Qwen-Image-2.1 tiene licencia de investigación; no utilizar comercialmente sin autorización. GPU con cuota compartida.',
   }),
   Object.freeze({
     id: 'qwen-image-edit-2511',
@@ -31,7 +31,7 @@ const PROVIDERS = Object.freeze([
     mode: 'browser',
     billing: 'free-quota',
     requiresAccount: false,
-    note: 'Demo oficial en ZeroGPU de edición dirigida por instrucciones. Para conservar mejor objetos, composición y detalles; la fidelidad debe evaluarse.',
+    note: 'Demo oficial ZeroGPU de edición por instrucciones; modelo Qwen Image Edit 2511 bajo Apache-2.0. Revisar condiciones del Space y evaluar fidelidad real.',
   }),
   Object.freeze({
     id: 'wan22-video-fast',
