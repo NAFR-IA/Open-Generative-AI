@@ -34,14 +34,15 @@ const CHECK_MODEL = getModelById('wan2gp:wan21-t2v-1.3b');
 // ─── Config ───────────────────────────────────────────────────────────────────
 // { dir, python, url } — a Wan2GP folder takes precedence over a remote URL.
 function readConfig() {
-    try { return { dir: '', python: '', url: '', ...JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8')) }; }
-    catch { return { dir: '', python: '', url: '' }; }
+    try { return { dir: '', python: '', url: '', token: '', ...JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8')) }; }
+    catch { return { dir: '', python: '', url: '', token: '' }; }
 }
 function writeConfig(cfg) {
     const next = {
         dir: (cfg.dir || '').trim(),
         python: (cfg.python || '').trim(),
         url: (cfg.url || '').trim().replace(/\/+$/, ''),
+        token: (cfg.token || '').trim(),
     };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(next, null, 2));
     return next;
@@ -54,10 +55,14 @@ function engineMode(cfg) {
 
 // ─── Remote (MCP) ─────────────────────────────────────────────────────────────
 const mcpClients = new Map();
-function mcpClientFor(url) {
+function mcpClientKey(url, token = '') {
+    return `${normalizeMcpUrl(url)}\n${token}`;
+}
+function mcpClientFor(url, token = '') {
     const endpoint = normalizeMcpUrl(url);
-    if (!mcpClients.has(endpoint)) mcpClients.set(endpoint, createMcpClient(endpoint));
-    return mcpClients.get(endpoint);
+    const key = mcpClientKey(url, token);
+    if (!mcpClients.has(key)) mcpClients.set(key, createMcpClient(endpoint, { token }));
+    return mcpClients.get(key);
 }
 
 // Explain the most common misconfiguration: the URL of WanGP's Gradio UI.
@@ -73,13 +78,13 @@ async function explainRemoteFailure(url, err) {
     return `Wan2GP MCP server not reachable at ${normalizeMcpUrl(url)}: ${err.message}`;
 }
 
-async function probeRemote(url) {
+async function probeRemote(url, token = '') {
     if (!url) return { ok: false, error: 'URL is empty' };
     try {
-        const info = await mcpClientFor(url).probe();
+        const info = await mcpClientFor(url, token).probe();
         return { ok: true, mode: 'remote', message: `Connected to ${info.server} MCP ${info.version}` };
     } catch (err) {
-        mcpClients.delete(normalizeMcpUrl(url));
+        mcpClients.delete(mcpClientKey(url, token));
         return { ok: false, mode: 'remote', error: await explainRemoteFailure(url, err) };
     }
 }
@@ -95,9 +100,9 @@ async function engineStatus(cfg = readConfig()) {
         return { ok: true, mode, modelStatus: local.localModelStatus(install, modelTypes) };
     }
     if (mode === 'remote') {
-        const probe = await probeRemote(cfg.url);
+        const probe = await probeRemote(cfg.url, cfg.token);
         if (!probe.ok) return { ok: false, mode, error: probe.error };
-        const client = mcpClientFor(cfg.url);
+        const client = mcpClientFor(cfg.url, cfg.token);
         const modelStatus = new Map();
         for (const modelType of modelTypes) {
             try { modelStatus.set(modelType, await client.modelAvailability(modelType)); }
@@ -117,7 +122,7 @@ async function listModels() {
 // `quick` skips the dry run (it starts Python and imports torch — seconds, not milliseconds).
 async function check(cfg) {
     const mode = engineMode(cfg);
-    if (mode === 'remote') return probeRemote(cfg.url);
+    if (mode === 'remote') return probeRemote(cfg.url, cfg.token);
     if (mode !== 'local') return { ok: false, error: 'Set the Wan2GP folder or a server URL first.' };
 
     const install = local.resolveInstall(cfg);
@@ -192,7 +197,7 @@ async function generate(params, mainWindow) {
             return mediaResult(mediaPath, settings.seed);
         }
 
-        const client = mcpClientFor(cfg.url);
+        const client = mcpClientFor(cfg.url, cfg.token);
         const abort = new AbortController();
         let jobId = null;
         run.cancel = () => {
@@ -247,7 +252,7 @@ function register() {
         return { ok: true };
     });
     ipcMain.handle('wan2gp:check', (_, cfg) => check({ ...readConfig(), ...cfg }));
-    ipcMain.handle('wan2gp:probe', (_, url) => probeRemote(url));
+    ipcMain.handle('wan2gp:probe', (_, url) => probeRemote(url, readConfig().token));
     ipcMain.handle('wan2gp:pick-folder', async () => {
         const res = await dialog.showOpenDialog(getMainWindow(), { title: 'Select the Wan2GP folder', properties: ['openDirectory'] });
         return res.canceled ? null : res.filePaths[0];
