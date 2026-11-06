@@ -29,3 +29,12 @@ node --test tests/freeCloudProviders.test.js
 ```
 
 This module has no third-party runtime dependencies.
+
+## Manual project-to-cloud workflow
+1. Open Image Studio or Video Studio and prepare the prompt.
+2. Click `☁ Gratis 0 €`. The modal reads only the currently visible studio prompt into an editable text area.
+3. Click `Copiar texto al portapapeles` to copy via Electron clipboard; this is a local operation and does not send the prompt to providers.
+4. Open a curated free demo, paste the prompt and upload the reference image manually **only after reviewing the Space's policies**.
+5. If commercial rights are required, do not use Qwen Image 2.1 research-only outputs without permission; verify other model/Space terms individually.
+
+The new clipboard operation rejects prompts over 12,000 characters. ZeroGPU can rate-limit users; access to a demo does not constitute a guarantee of generation. A direct in-app cloud generation adapter is **not yet implemented**.
