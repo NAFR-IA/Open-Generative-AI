@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, dialog, ipcMain, clipboard } = require('electron');
 const { listFreeCloudProviders, openFreeCloudProvider } = require('./lib/freeCloudProviders');
 const path = require('path');
 const { register: registerLocalInference } = require('./lib/localInference');
@@ -74,6 +74,11 @@ app.whenReady().then(() => {
     // Zero-cost cloud handoff: no automatic uploads or billable requests.
     ipcMain.handle('free-cloud:list', () => listFreeCloudProviders());
     ipcMain.handle('free-cloud:open', (_event, providerId) => openFreeCloudProvider(providerId, url => shell.openExternal(url)));
+    ipcMain.handle('free-cloud:copy-prompt', (_event, prompt) => {
+        if (typeof prompt !== 'string' || prompt.length > 12000) throw new Error('Prompt invalid or too long');
+        clipboard.writeText(prompt);
+        return { ok: true };
+    });
 
     try {
         registerLocalInference();
