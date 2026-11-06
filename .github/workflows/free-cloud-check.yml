@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'electron/lib/freeCloudProviders.js'
+      - 'electron/lib/freeCloudPrompt.js'
       - 'electron/main.js'
       - 'electron/preload.js'
       - 'src/components/FreeCloudModal.js'
       - 'src/components/Header.js'
       - 'tests/freeCloudProviders.test.js'
+      - 'tests/freeCloudPrompt.test.js'
       - '.github/workflows/free-cloud-check.yml'
       - 'package*.json'
   workflow_dispatch:
@@ -28,11 +30,13 @@ jobs:
       - name: Syntax validation
         run: |
           node --check electron/lib/freeCloudProviders.js
+          node --check electron/lib/freeCloudPrompt.js
           node --check electron/main.js
           node --check electron/preload.js
           node --check tests/freeCloudProviders.test.js
+          node --check tests/freeCloudPrompt.test.js
       - name: Free cloud security and behaviour tests
-        run: node --test tests/freeCloudProviders.test.js
+        run: node --test tests/freeCloudProviders.test.js tests/freeCloudPrompt.test.js
 
   renderer-build:
     runs-on: ubuntu-latest
