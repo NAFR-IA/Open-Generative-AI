@@ -13,6 +13,26 @@ const PROVIDERS = Object.freeze([
     requiresAccount: false,
     note: 'Individual Spaces vary in availability, model licence and usage quota. Free account: currently 5 GPU minutes per day. Check each Space before uploading images.',
   }),
+  Object.freeze({
+    id: 'qwen-image-21',
+    label: 'Qwen Image 2.1 — generación y edición',
+    url: 'https://huggingface.co/spaces/Qwen/Qwen-Image-2.1',
+    capabilities: Object.freeze(['image', 'image-editing']),
+    mode: 'browser',
+    billing: 'free-quota',
+    requiresAccount: false,
+    note: 'Demo oficial de Qwen en ZeroGPU. Generación y edición de imágenes con GPU gratuita compartida; disponibilidad y licencias sujetas al Space.',
+  }),
+  Object.freeze({
+    id: 'qwen-image-edit-2511',
+    label: 'Qwen Image Edit 2511 — edición con referencias',
+    url: 'https://huggingface.co/spaces/Qwen/Qwen-Image-Edit-2511',
+    capabilities: Object.freeze(['image-editing']),
+    mode: 'browser',
+    billing: 'free-quota',
+    requiresAccount: false,
+    note: 'Demo oficial en ZeroGPU de edición dirigida por instrucciones. Para conservar mejor objetos, composición y detalles; la fidelidad debe evaluarse.',
+  }),
 ]);
 
 function listFreeCloudProviders() {
