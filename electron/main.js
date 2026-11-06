@@ -1,5 +1,6 @@
 const { app, BrowserWindow, shell, dialog, ipcMain, clipboard } = require('electron');
 const { listFreeCloudProviders, openFreeCloudProvider } = require('./lib/freeCloudProviders');
+const { validatePrompt } = require('./lib/freeCloudPrompt');
 const path = require('path');
 const { register: registerLocalInference } = require('./lib/localInference');
 const { register: registerWan2gp } = require('./lib/wan2gpProvider');
@@ -75,8 +76,7 @@ app.whenReady().then(() => {
     ipcMain.handle('free-cloud:list', () => listFreeCloudProviders());
     ipcMain.handle('free-cloud:open', (_event, providerId) => openFreeCloudProvider(providerId, url => shell.openExternal(url)));
     ipcMain.handle('free-cloud:copy-prompt', (_event, prompt) => {
-        if (typeof prompt !== 'string' || prompt.length > 12000) throw new Error('Prompt invalid or too long');
-        clipboard.writeText(prompt);
+        clipboard.writeText(validatePrompt(prompt));
         return { ok: true };
     });
 
